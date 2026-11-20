@@ -1,0 +1,25 @@
+name: AF1 drop watcher
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes (GitHub may delay runs a bit)
+  workflow_dispatch:         # lets you press "Run workflow" to test
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the shop
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python3 af1_watcher.py --once
+      - name: Remember what was seen
+        run: |
+          git config user.name "af1-bot"
+          git config user.email "af1-bot@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet || (git commit -m "Update drop state" && git push)
